@@ -14,6 +14,10 @@ const Circle = @import("round.zig").Circle;
 //pub fn run(file_path: []u8) void {
 pub fn run() void {
     const allocator = std.testing.allocator;
+
+    var points = std.AutoHashMap(Point, [2]?Edge).init(allocator);
+    defer points.deinit();
+
     var edges = std.AutoHashMap(Edge, [2]?usize).init(allocator);
     defer edges.deinit();
 
