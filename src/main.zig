@@ -7,6 +7,7 @@ const capy = @import("capy");
 // This is required for your app to build to WebAssembly and other particular architectures
 pub usingnamespace capy.cross_platform;
 
+// Finite Volume Method (FVM)
 pub fn main() !void {
     try capy.init();
 
