@@ -1,22 +1,24 @@
 const std = @import("std");
 
-pub fn readString(file_path: []u8) std.ArrayList(u8) {
+pub fn readString(file_path: []const u8) std.ArrayList(u8) {
     return readInts(file_path, u8);
 }
 
-pub fn readInts(file_path: []u8, T: anytype) std.ArrayList(T) {
-    comptime {
-        //const type_info = @typeInfo(@TypeOf(number));
-        const type_info = @typeInfo(T);
-        if (type_info != .int) {
-            @compileError("input must be an integer type to read from file");
-        }
-    }
+pub fn readInts(file_path: []const u8, T: anytype, allocator: std.mem.Allocator) std.ArrayList(T) {
+    //pub fn readInts(T: anytype, allocator: std.mem.Allocator) std.ArrayList(T) {
+    //comptime {
+    //    //const type_info = @typeInfo(@TypeOf(number));
+    //    const type_info = @typeInfo(T);
+    //    if (type_info != .int) {
+    //        @compileError("input must be an integer type to read from file");
+    //    }
+    //}
 
-    const allocator = std.testing.allocator;
+    //const allocator = std.testing.allocator;
 
     // Open file for reading
     const file = std.fs.cwd().openFile(file_path, .{}) catch unreachable;
+    //const file = std.fs.cwd().openFile("image_x.bin", .{}) catch unreachable;
     defer file.close();
 
     // Get the file size.

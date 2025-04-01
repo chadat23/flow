@@ -3,6 +3,7 @@
 //! is to delete this file and start with root.zig instead.
 const std = @import("std");
 const capy = @import("capy");
+const fs = @import("fs.zig");
 
 // This is required for your app to build to WebAssembly and other particular architectures
 pub usingnamespace capy.cross_platform;
@@ -11,15 +12,41 @@ pub usingnamespace capy.cross_platform;
 pub fn main() !void {
     try capy.init();
 
+    const image_file: []const u8 = "./tests/image_x.bin";
+    const x_file = fs.readInts(image_file, u8, capy.scratch_allocator);
+    std.debug.print("are belong to us {}.\n", .{x_file.items.len});
+
+    const image_data = capy.ImageData.fromBytes(
+        66,
+        30,
+        66,
+        capy.Colorspace.RGB,
+        x_file.items,
+        capy.scratch_allocator,
+    ) catch unreachable;
+
     var window = try capy.Window.init();
     try window.set(capy.column(.{ .spacing = 10 }, .{ // have 10px spacing between each column's element
-        capy.row(.{ .spacing = 5 }, .{ // have 5px spacing between each row's element
-            capy.button(.{ .label = "Save", .onclick = @ptrCast(&buttonClicked) }),
-            capy.button(.{ .label = "Run", .onclick = @ptrCast(&buttonClicked) }),
+        capy.row(.{ .spacing = 5 }, .{
+            capy.image(.{
+                .url = "",
+                .data = image_data,
+                .scaling = capy.Image.Scaling.None,
+            }),
+            //capy.image(.{ .data = image_data, .scaling = .None }),
+            //capy.Image.init(.{ .data = image_data, .scaling = .None }),
         }),
-        // 'expanded' means the widget will take all the space it can
-        // in the parent container
-        capy.expanded(capy.textArea(.{ .text = "Hello World!" })),
+        //capy.row(.{ .spacing = 5 }, .{ // have 5px spacing between each row's element
+        //    capy.button(.{ .label = "Save", .onclick = @ptrCast(&buttonClicked) }),
+        //    capy.button(.{ .label = "Run", .onclick = @ptrCast(&buttonClicked) }),
+        //}),
+        //capy.row(.{ .spacing = 5 }, .{ // have 5px spacing between each row's element
+        //    capy.button(.{ .label = "Save", .onclick = @ptrCast(&buttonClicked) }),
+        //    capy.button(.{ .label = "Run", .onclick = @ptrCast(&buttonClicked) }),
+        //}),
+        //// 'expanded' means the widget will take all the space it can
+        //// in the parent container
+        //capy.expanded(capy.textArea(.{ .text = "Hello World!" })),
     }));
 
     window.setPreferredSize(800, 600);
