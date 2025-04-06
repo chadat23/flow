@@ -1,6 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 const math = std.math;
+const approx = math.approxEqAbs;
 const allocPrint = std.fmt.allocPrint;
 const Element = @import("element.zig").Element;
 const Point = @import("geometry.zig").Point;
@@ -9,13 +10,30 @@ const utils = @import("utils.zig");
 pub const Circle = struct {
     center: Point,
     r: f32,
-    sides: u8 = 32,
+    points: [32]Point,
+
+    pub fn create(center: Point, r: f32) Circle {
+        var points: [32]Point = undefined;
+        const rad_per_side = math.degreesToRadians(360.0 / @as(f32, @floatFromInt(points.len)));
+        for (0..points.len) |i| {
+            points[i] = Point{
+                .x = center.x + r * @cos(@as(f32, @floatFromInt(i)) * rad_per_side),
+                .y = center.y + r * @sin(@as(f32, @floatFromInt(i)) * rad_per_side),
+            };
+        }
+        return .{
+            .center = center,
+            .r = r,
+            .points = points,
+        };
+    }
 
     pub fn shortestEdge(self: *const Circle) f32 {
-        const rad_per_side = math.degreesToRadians(360.0 / @as(f32, @floatFromInt(self.sides)));
-        const dx = self.r - self.r * @cos(rad_per_side);
-        const dy = self.r * @sin(rad_per_side);
-        return utils.distXY(dx, dy);
+        return utils.distPoints(self.points[0], self.points[1]);
+    }
+
+    pub fn characteristicLength(self: *const Circle) f32 {
+        return utils.distPoints(self.points[0], self.points[16]);
     }
 
     pub fn isInBody(self: *const Circle, point: Point) bool {
@@ -37,13 +55,21 @@ pub const Circle = struct {
     }
 
     pub fn iterator(self: *const Circle) CircleIterator {
-        const rad_per_side = math.degreesToRadians(360.0 / @as(f32, @floatFromInt(self.sides)));
-        return CircleIterator{ .body = self.*, .rad_per_side = rad_per_side };
+        return CircleIterator{ .body = self.* };
     }
 };
 
+test "characteristicLength" {
+    const circle = Circle.create(Point{ .x = 3, .y = 4 }, 5);
+    const actual = circle.characteristicLength();
+    const expected = 10;
+    const tolerance = 0.000001;
+    std.debug.print("crosses {}\n", .{actual});
+    try testing.expect(math.approxEqAbs(f32, actual, expected, tolerance));
+}
+
 test "isInBody" {
-    const circle = Circle{ .center = Point{ .x = 3, .y = 4 }, .r = 5 };
+    const circle = Circle.create(Point{ .x = 3, .y = 4 }, 5);
     // above
     var point = Point{ .x = 3, .y = 9.1 };
     try testing.expect(!circle.isInBody(point));
@@ -71,7 +97,7 @@ test "isInBody" {
 }
 
 test "shortestEdge" {
-    const circle = Circle{ .center = Point{ .x = 1, .y = 2 }, .r = 3 };
+    const circle = Circle.create(Point{ .x = 1, .y = 2 }, 3);
     const actual = circle.shortestEdge();
     const expected = 0.588103;
     const tolerance = 0.000001;
@@ -81,22 +107,19 @@ test "shortestEdge" {
 pub const CircleIterator = struct {
     body: Circle,
     index: u8 = 0,
-    rad_per_side: f32,
 
     pub fn nextPoint(self: *CircleIterator) ?Point {
-        if (self.index >= self.body.sides) return null;
-        const x = self.body.center.x + self.body.r * @cos(@as(f32, @floatFromInt(self.index)) * self.rad_per_side);
-        const y = self.body.center.y + self.body.r * @sin(@as(f32, @floatFromInt(self.index)) * self.rad_per_side);
+        if (self.index >= self.body.points.len) return null;
+        const point = self.body.points[self.index];
         self.index += 1;
-        return Point{ .x = x, .y = y };
+        return point;
     }
 };
 
 test "nextPoint" {
-    const circle = Circle{ .center = Point{ .x = 1, .y = 2 }, .r = 3 };
+    const circle = Circle.create(Point{ .x = 1, .y = 2 }, 3);
     var cl = circle.iterator();
     const expect = testing.expect;
-    const approx = math.approxEqAbs;
     const tol = 0.000001;
 
     var actual = cl.nextPoint().?;

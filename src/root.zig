@@ -15,6 +15,15 @@ const Circle = @import("round.zig").Circle;
 pub fn run() void {
     const allocator = std.testing.allocator;
 
+    const body = Circle.create(Point{ .x = 0.5, .y = 0.25 }, 3);
+
+    const shortest_edge = body.shortestEdge();
+
+    const longest_edge_char_len_ratio = 0.1;
+    const characteristic_length = body.characteristicLength();
+    const char_len = characteristic_length * std.math.pi / 3; // make base element grid dims wird to avoid intersecting points
+    const lengest_edge = char_len * longest_edge_char_len_ratio;
+
     var points = std.AutoHashMap(Point, [2]?Edge).init(allocator);
     defer points.deinit();
 
@@ -24,9 +33,6 @@ pub fn run() void {
     var elements = std.ArrayList(Element2D).init(allocator);
     defer elements.deinit();
 
-    const body = Circle{ .x = 0.5, .y = 0.25, .r = 3 };
-
-    const shortest_edge = body.shortestEdge();
 
     std.debug.print("debug: {d}\n", .{shortest_edge});
 }
