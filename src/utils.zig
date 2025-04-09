@@ -38,3 +38,21 @@ test "distPoints" {
     const tolerance = 0.000001;
     try testing.expect(math.approxEqAbs(f32, actual, expected, tolerance));
 }
+
+pub fn makeImageRGB(points: std>AutoHashMap(Point, [10]?Edge, flow_domain_length: f32, flow_domain_height: f32, width: u16, height: u16) std.AutoArray(u32) {
+    const allocator = std.testing.allocator;
+    var image = std.AutoArray(u32).initCapacity(allocator, width * height * 3);
+
+    image.appendSlice(.{255} ** (width * height * 3));
+
+    for (points.keys()) |point| {
+        const x = math.floor(point.x / flow_domain_length * width);
+        const y = math.floor(point.y / flow_domain_heigth * height);
+        const i = (x + y * width) * 3;
+        image.items[i] = 0;
+        image.items[i+1] = 0;
+        image.items[i+2] = 0;
+    }
+    
+    return image;
+}

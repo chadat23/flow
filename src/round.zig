@@ -6,6 +6,7 @@ const allocPrint = std.fmt.allocPrint;
 const Element = @import("element.zig").Element;
 const Point = @import("geometry.zig").Point;
 const utils = @import("utils.zig");
+const Position = @import("position.zig").Position;
 
 pub const Circle = struct {
     center: Point,
