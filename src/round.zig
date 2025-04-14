@@ -8,13 +8,15 @@ const Point = @import("geometry.zig").Point;
 const utils = @import("utils.zig");
 const Position = @import("position.zig").Position;
 
+const point_count = 64;
+
 pub const Circle = struct {
     center: Point,
     r: f32,
-    points: [32]Point,
+    points: [point_count]Point,
 
     pub fn create(center: Point, r: f32) Circle {
-        var points: [32]Point = undefined;
+        var points: [point_count]Point = undefined;
         const rad_per_side = math.degreesToRadians(360.0 / @as(f32, @floatFromInt(points.len)));
         for (0..points.len) |i| {
             const rads = @as(f32, @floatFromInt(i)) * rad_per_side;
@@ -37,7 +39,7 @@ pub const Circle = struct {
     }
 
     pub fn characteristicLength(self: *const Circle) u16 {
-        return utils.distPoints(self.points[0], self.points[16]);
+        return utils.distPoints(self.points[0], self.points[point_count / 2]);
     }
 
     pub fn isInBody(self: *const Circle, point: Point) bool {

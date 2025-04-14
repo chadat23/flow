@@ -26,7 +26,7 @@ pub fn run() void {
 
     const shortest_edge: u16 = body.shortestEdge();
     const characteristic_length = body.characteristicLength();
-    const longest_edge_char_len_ratio = 10;
+    const longest_edge_char_len_ratio = 6;
     const char_len: u16 = @intFromFloat(@as(f32, @floatFromInt(characteristic_length)) * std.math.pi / 3); // make base element grid dims weird to avoid intersecting points
     const longest_edge: u16 = char_len / longest_edge_char_len_ratio;
     std.debug.print("longest_edge: {d}\n", .{longest_edge});
