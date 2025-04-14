@@ -18,8 +18,8 @@ const fs = @import("fs.zig");
 pub fn run() void {
     const allocator = std.testing.allocator;
 
-    const flow_domain_length: u16 = 4000;
-    const flow_domain_height: u16 = 4000;
+    const flow_domain_length: u16 = 3000;
+    const flow_domain_height: u16 = 3000;
 
     // TODO: seems like there should be something to get the centroid to automatically place it
     const body = Circle.create(Point{ .x = flow_domain_length / 2, .y = flow_domain_height / 2 }, 500);
@@ -43,11 +43,18 @@ pub fn run() void {
     while (x < flow_domain_length + shortest_edge) : (x += longest_edge) {
         y = 0;
         while (y < flow_domain_height + shortest_edge) : (y += longest_edge) {
-            points.put(Point{ .x = x, .y = y }, .{null} ** 2) catch unreachable;
+            const point = Point{ .x = x, .y = y };
+            if (!body.isInBody(point)) {
+                points.put(point, .{null} ** 2) catch unreachable;
+            }
         }
     }
     x -= longest_edge;
     y -= longest_edge;
+    for (body.points) |point| {
+        points.put(point, .{null} ** 2) catch unreachable;
+    }
+
     std.debug.print("point count: {d}\n", .{points.count()});
 
     const image_width = 1000;

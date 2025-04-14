@@ -71,35 +71,35 @@ pub const Circle = struct {
 //    std.debug.print("crosses {}\n", .{actual});
 //    try testing.expectEqual(actual, expected);
 //}
-//
-//test "isInBody" {
-//    const circle = Circle.create(Point{ .x = 30, .y = 40 }, 50);
-//    // above
-//    var point = Point{ .x = 30, .y = 91 };
-//    try testing.expect(!circle.isInBody(point));
-//    // in
-//    point = Point{ .x = 30, .y = 89 };
-//    try testing.expect(circle.isInBody(point));
-//    // right maybe y = 7
-//    point = Point{ .x = 69, .y = 6 };
-//    try testing.expect(!circle.isInBody(point));
-//    // in
-//    point = Point{ .x = 69, .y = 11 };
-//    try testing.expect(circle.isInBody(point));
-//    // below
-//    point = Point{ .x = 30, .y = -12 };
-//    try testing.expect(!circle.isInBody(point));
-//    // in
-//    point = Point{ .x = 30, .y = -10 };
-//    try testing.expect(circle.isInBody(point));
-//    // left
-//    point = Point{ .x = -5, .y = 3 };
-//    try testing.expect(!circle.isInBody(point));
-//    // in
-//    point = Point{ .x = -2, .y = 3 };
-//    try testing.expect(circle.isInBody(point));
-//}
-//
+
+test "isInBody" {
+    const circle = Circle.create(Point{ .x = 60, .y = 70 }, 50);
+    // above
+    var point = Point{ .x = 60, .y = 121 };
+    try testing.expect(!circle.isInBody(point));
+    // in
+    point = Point{ .x = 60, .y = 119 };
+    try testing.expect(circle.isInBody(point));
+    // right
+    point = Point{ .x = 111, .y = 71 };
+    try testing.expect(!circle.isInBody(point));
+    // in
+    point = Point{ .x = 108, .y = 71 };
+    try testing.expect(circle.isInBody(point));
+    // below
+    point = Point{ .x = 61, .y = 18 };
+    try testing.expect(!circle.isInBody(point));
+    // in
+    point = Point{ .x = 61, .y = 22 };
+    try testing.expect(circle.isInBody(point));
+    // left
+    point = Point{ .x = 8, .y = 69 };
+    try testing.expect(!circle.isInBody(point));
+    // in
+    point = Point{ .x = 12, .y = 69 };
+    try testing.expect(circle.isInBody(point));
+}
+
 //test "shortestEdge" {
 //    const circle = Circle.create(Point{ .x = 1, .y = 2 }, 3);
 //    const actual = circle.shortestEdge();
@@ -273,55 +273,61 @@ fn isAdjacent(last_point: Point, this_point: Point, point: Point) bool {
     if (last_point.y == point.y) {
         return false;
     }
-    const slope = (this_point.y - last_point.y) / (this_point.x - last_point.x);
-    const dy = point.y - last_point.y;
-    const x = last_point.x + dy / slope;
-    if (point.x <= x) return true else return false;
+    const lpx: f32 = @floatFromInt(last_point.x);
+    const lpy: f32 = @floatFromInt(last_point.y);
+    const tpx: f32 = @floatFromInt(this_point.x);
+    const tpy: f32 = @floatFromInt(this_point.y);
+    const px: f32 = @floatFromInt(point.x);
+    const py: f32 = @floatFromInt(point.y);
+    const slope = (tpy - lpy) / (tpx - lpx);
+    const dy = py - lpy;
+    const x = lpx + dy / slope;
+    if (px <= x) return true else return false;
 }
 
-//test "isAdjascent" {
-//    // above
-//    var last_point = Point{ .x = 5, .y = 0 };
-//    var this_point = Point{ .x = 5, .y = 5 };
-//    var point = Point{ .x = 5, .y = 10 };
-//    try testing.expect(!isAdjacent(last_point, this_point, point));
-//    this_point = Point{ .x = 5, .y = 0 };
-//    last_point = Point{ .x = 5, .y = 5 };
-//    point = Point{ .x = 5, .y = 10 };
-//    try testing.expect(!isAdjacent(last_point, this_point, point));
-//    // below
-//    last_point = Point{ .x = 5, .y = 0 };
-//    this_point = Point{ .x = 5, .y = 5 };
-//    point = Point{ .x = 5, .y = -1 };
-//    try testing.expect(!isAdjacent(last_point, this_point, point));
-//    this_point = Point{ .x = 5, .y = 0 };
-//    last_point = Point{ .x = 5, .y = 5 };
-//    point = Point{ .x = 5, .y = -1 };
-//    try testing.expect(!isAdjacent(last_point, this_point, point));
-//    // last_point
-//    last_point = Point{ .x = 5, .y = 0 };
-//    this_point = Point{ .x = 5, .y = 5 };
-//    point = Point{ .x = 4, .y = 0 };
-//    try testing.expect(!isAdjacent(last_point, this_point, point));
-//    // this_point
-//    last_point = Point{ .x = 5, .y = 0 };
-//    this_point = Point{ .x = 5, .y = 5 };
-//    point = Point{ .x = 4, .y = 5 };
-//    try testing.expect(isAdjacent(last_point, this_point, point));
-//    point = Point{ .x = 5, .y = 5 };
-//    try testing.expect(isAdjacent(last_point, this_point, point));
-//    point = Point{ .x = 6, .y = 5 };
-//    try testing.expect(!isAdjacent(last_point, this_point, point));
-//    // line segment
-//    last_point = Point{ .x = 5, .y = 0 };
-//    this_point = Point{ .x = 5, .y = 5 };
-//    point = Point{ .x = 4, .y = 3 };
-//    try testing.expect(isAdjacent(last_point, this_point, point));
-//    point = Point{ .x = 6, .y = 3 };
-//    try testing.expect(!isAdjacent(last_point, this_point, point));
-//    this_point = Point{ .x = 10, .y = 5 };
-//    point = Point{ .x = 7.9, .y = 3 };
-//    try testing.expect(isAdjacent(last_point, this_point, point));
-//    point = Point{ .x = 8.1, .y = 3 };
-//    try testing.expect(!isAdjacent(last_point, this_point, point));
-//}
+test "isAdjascent" {
+    // above
+    var last_point = Point{ .x = 5, .y = 0 };
+    var this_point = Point{ .x = 5, .y = 5 };
+    var point = Point{ .x = 5, .y = 10 };
+    try testing.expect(!isAdjacent(last_point, this_point, point));
+    this_point = Point{ .x = 5, .y = 0 };
+    last_point = Point{ .x = 5, .y = 5 };
+    point = Point{ .x = 5, .y = 10 };
+    try testing.expect(!isAdjacent(last_point, this_point, point));
+    // below
+    last_point = Point{ .x = 5, .y = 2 };
+    this_point = Point{ .x = 5, .y = 5 };
+    point = Point{ .x = 5, .y = 1 };
+    try testing.expect(!isAdjacent(last_point, this_point, point));
+    this_point = Point{ .x = 5, .y = 2 };
+    last_point = Point{ .x = 5, .y = 5 };
+    point = Point{ .x = 5, .y = 1 };
+    try testing.expect(!isAdjacent(last_point, this_point, point));
+    // last_point
+    last_point = Point{ .x = 5, .y = 0 };
+    this_point = Point{ .x = 5, .y = 5 };
+    point = Point{ .x = 4, .y = 0 };
+    try testing.expect(!isAdjacent(last_point, this_point, point));
+    // this_point
+    last_point = Point{ .x = 5, .y = 0 };
+    this_point = Point{ .x = 5, .y = 5 };
+    point = Point{ .x = 4, .y = 5 };
+    try testing.expect(isAdjacent(last_point, this_point, point));
+    point = Point{ .x = 5, .y = 5 };
+    try testing.expect(isAdjacent(last_point, this_point, point));
+    point = Point{ .x = 6, .y = 5 };
+    try testing.expect(!isAdjacent(last_point, this_point, point));
+    // line segment
+    last_point = Point{ .x = 5, .y = 0 };
+    this_point = Point{ .x = 5, .y = 5 };
+    point = Point{ .x = 4, .y = 3 };
+    try testing.expect(isAdjacent(last_point, this_point, point));
+    point = Point{ .x = 6, .y = 3 };
+    try testing.expect(!isAdjacent(last_point, this_point, point));
+    this_point = Point{ .x = 10, .y = 5 };
+    point = Point{ .x = 7, .y = 3 };
+    try testing.expect(isAdjacent(last_point, this_point, point));
+    point = Point{ .x = 9, .y = 3 };
+    try testing.expect(!isAdjacent(last_point, this_point, point));
+}
