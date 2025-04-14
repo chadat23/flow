@@ -1,58 +1,73 @@
 const std = @import("std");
 const testing = std.testing;
 const math = std.math;
+const geometry = @import("geometry.zig");
+const Edge = geometry.Edge;
 
 const Point = @import("geometry.zig").Point;
 
-pub fn distPoints(a: Point, b: Point) f32 {
+pub fn distPoints(a: Point, b: Point) u16 {
     return distXYXY(a.x, a.y, b.x, b.y);
 }
 
-pub fn distXYXY(x0: f32, y0: f32, x1: f32, y1: f32) f32 {
-    return distXY(x0 - x1, y0 - y1);
+pub fn distXYXY(x0: u16, y0: u16, x1: u16, y1: u16) u16 {
+    const a0 = @max(x0, x1);
+    const a1 = @min(x0, x1);
+    const b0 = @max(y0, y1);
+    const b1 = @min(y0, y1);
+    return distXY(a0 - a1, b0 - b1);
 }
 
-pub fn distXY(x: f32, y: f32) f32 {
-    return math.pow(f32, math.pow(f32, x, 2) + math.pow(f32, y, 2), 0.5);
+pub fn distXY(x: u16, y: u16) u16 {
+    const a: f32 = @floatFromInt(math.pow(u32, x, 2));
+    const b: f32 = @floatFromInt(math.pow(u32, y, 2));
+    return @intFromFloat(math.pow(f32, a + b, 0.5));
 }
 
 test "distXY" {
-    const actual = distXY(3, 4);
-    const expected = 5;
-    const tolerance = 0.000001;
-    try testing.expect(math.approxEqAbs(f32, actual, expected, tolerance));
+    const actual = distXY(30, 40);
+    const expected = 50;
+    try testing.expectEqual(actual, expected);
 }
 
 test "distXYXY" {
-    const actual = distXYXY(1, 2, 4, 6);
-    const expected = 5;
-    const tolerance = 0.000001;
-    try testing.expect(math.approxEqAbs(f32, actual, expected, tolerance));
+    const actual = distXYXY(10, 20, 40, 60);
+    const expected = 50;
+    try testing.expectEqual(actual, expected);
 }
 
 test "distPoints" {
-    const p0 = Point{ .x = 1, .y = 2 };
-    const p1 = Point{ .x = 4, .y = 6 };
+    const p0 = Point{ .x = 10, .y = 20 };
+    const p1 = Point{ .x = 40, .y = 60 };
     const actual = distPoints(p0, p1);
-    const expected = 5;
-    const tolerance = 0.000001;
-    try testing.expect(math.approxEqAbs(f32, actual, expected, tolerance));
+    const expected = 50;
+    try testing.expectEqual(actual, expected);
 }
 
-pub fn makeImageRGB(points: std>AutoHashMap(Point, [10]?Edge, flow_domain_length: f32, flow_domain_height: f32, width: u16, height: u16) std.AutoArray(u32) {
+pub fn makeImageRGB(
+    points: std.AutoHashMap(Point, [2]?Edge),
+    flow_domain_length: u16,
+    flow_domain_height: u16,
+    image_width: u32,
+    image_height: u32,
+) std.ArrayList(u32) {
     const allocator = std.testing.allocator;
-    var image = std.AutoArray(u32).initCapacity(allocator, width * height * 3);
+    const samples: u16 = 3;
+    var image = std.ArrayList(u32).initCapacity(allocator, (image_width + 1) * (image_height + 1) * samples) catch unreachable;
 
-    image.appendSlice(.{255} ** (width * height * 3));
-
-    for (points.keys()) |point| {
-        const x = math.floor(point.x / flow_domain_length * width);
-        const y = math.floor(point.y / flow_domain_heigth * height);
-        const i = (x + y * width) * 3;
-        image.items[i] = 0;
-        image.items[i+1] = 0;
-        image.items[i+2] = 0;
+    for (0..(image_width + 1) * (image_height + 1) * samples) |_| {
+        image.append(255) catch unreachable;
     }
-    
+
+    var points_iter = points.iterator();
+    while (points_iter.next()) |point| {
+        const x = point.key_ptr.*.x * image_width / flow_domain_length;
+        const y = point.key_ptr.*.y * image_height / flow_domain_height;
+        const i = (x + y * image_width) * 3;
+        image.items[i] = 0;
+        image.items[i + 1] = 0;
+        image.items[i + 2] = 0;
+    }
+
     return image;
 }

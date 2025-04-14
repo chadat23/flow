@@ -40,7 +40,7 @@ pub fn readInts(file_path: []const u8, T: anytype, allocator: std.mem.Allocator)
     return array;
 }
 
-pub fn write(file_path: []u8, buff: *const std.ArrayList(u8)) void {
+pub fn write(file_path: []const u8, buff: std.ArrayList(u8)) void {
     var file = std.fs.cwd().createFile(file_path, .{ .read = false }) catch unreachable;
     defer file.close();
 
