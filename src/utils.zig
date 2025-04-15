@@ -6,42 +6,129 @@ const Edge = geometry.Edge;
 
 const Point = @import("geometry.zig").Point;
 
-pub fn distPoints(a: Point, b: Point) u16 {
-    return distXYXY(a.x, a.y, b.x, b.y);
+//pub fn distPoints(comptime T: type, a: Point, b: Point) u16 {
+pub fn distPoints(comptime T: type, a: Point, b: Point) T {
+    switch (@typeInfo(T)) {
+        .comptime_float, .float => {
+            return distXYXY(
+                T,
+                @as(T, @floatFromInt(a.x)),
+                @as(T, @floatFromInt(a.y)),
+                @as(T, @floatFromInt(b.x)),
+                @as(T, @floatFromInt(b.y)),
+            );
+        },
+        .comptime_int, .int => {
+            return distXYXY(T, a.x, a.y, b.x, b.y);
+        },
+        else => @compileError("Type must be an Int or Float"),
+    }
 }
 
-pub fn distXYXY(x0: u16, y0: u16, x1: u16, y1: u16) u16 {
+pub fn distXYXY(comptime T: type, x0: T, y0: T, x1: T, y1: T) T {
     const a0 = @max(x0, x1);
     const a1 = @min(x0, x1);
     const b0 = @max(y0, y1);
     const b1 = @min(y0, y1);
-    return distXY(a0 - a1, b0 - b1);
+    return distXY(T, a0 - a1, b0 - b1);
 }
 
-pub fn distXY(x: u16, y: u16) u16 {
-    const a: f32 = @floatFromInt(math.pow(u32, x, 2));
-    const b: f32 = @floatFromInt(math.pow(u32, y, 2));
-    return @intFromFloat(math.pow(f32, a + b, 0.5));
+pub fn distXY(comptime T: type, x: T, y: T) T {
+    switch (@typeInfo(T)) {
+        .comptime_float, .float => {
+            const a = math.pow(T, x, 2);
+            const b = math.pow(T, y, 2);
+            return math.pow(T, a + b, 0.5);
+        },
+        .comptime_int, .int => {
+            const a: f32 = @floatFromInt(math.pow(T, x, 2));
+            const b: f32 = @floatFromInt(math.pow(T, y, 2));
+            return @intFromFloat(math.pow(f32, a + b, 0.5));
+        },
+        else => @compileError("Type must be an Int or Float"),
+    }
 }
 
 test "distXY" {
-    const actual = distXY(30, 40);
+    const actual = distXY(u16, 30, 40);
     const expected = 50;
-    try testing.expectEqual(actual, expected);
+    try testing.expectEqual(expected, actual);
 }
 
 test "distXYXY" {
-    const actual = distXYXY(10, 20, 40, 60);
+    const actual = distXYXY(u16, 10, 20, 40, 60);
     const expected = 50;
-    try testing.expectEqual(actual, expected);
+    try testing.expectEqual(expected, actual);
 }
 
 test "distPoints" {
     const p0 = Point{ .x = 10, .y = 20 };
     const p1 = Point{ .x = 40, .y = 60 };
-    const actual = distPoints(p0, p1);
+    const actual = distPoints(f32, p0, p1);
     const expected = 50;
-    try testing.expectEqual(actual, expected);
+    try testing.expectEqual(expected, actual);
+}
+
+// dist from point to the segment between point0 and point1
+pub fn distToSegment(point0: Point, point1: Point, point: Point) f32 {
+    const d0 = distPoints(f32, point0, point);
+    const d1 = distPoints(f32, point1, point);
+    const d01 = distPoints(f32, point0, point1);
+
+    if (angleLawOfCos(f32, d0, d1, d01) > std.math.pi / 2.0 or angleLawOfCos(f32, d1, d0, d01) > std.math.pi / 2.0) {
+        return @min(d0, d1);
+    }
+
+    const p0x: f32 = @floatFromInt(point0.x);
+    const p0y: f32 = @floatFromInt(point0.y);
+    const p1x: f32 = @floatFromInt(point1.x);
+    const p1y: f32 = @floatFromInt(point1.y);
+    const px: f32 = @floatFromInt(point.x);
+    const py: f32 = @floatFromInt(point.y);
+
+    // y = mx + b, y = y
+    const m01 = (p0y - p1y) / (p0x - p1x);
+    const m01_rad = std.math.atan(m01);
+    const b01 = p0y - m01 * p0x;
+    const m_rad = m01_rad + std.math.pi / 2.0;
+    const m = @tan(m_rad);
+    const b = py - m * px;
+    const x = (b01 - b) / (m - m01);
+    const y = m * x + b;
+
+    const d = distXYXY(f32, x, y, px, py);
+
+    return d;
+}
+
+// calc the angle A, which is oppose of the side A
+fn angleLawOfCos(comptime T: type, a: T, b: T, c: T) f32 {
+    switch (@typeInfo(T)) {
+        .comptime_float, .float => {
+            return std.math.acos((b * b + c * c - a * a) / (2 * b * c));
+        },
+        .comptime_int, .int => {
+            return std.math.acos(@as(f32, @floatFromInt((b * b + c * c - a * a) / (2 * b * c))));
+        },
+        else => @compileError("Type must be an Int or Float"),
+    }
+}
+
+test "distToSeqment" {
+    const p0 = Point{ .x = 20, .y = 10 };
+    const p1 = Point{ .x = 30, .y = 50 };
+    var p = Point{ .x = 15, .y = 4 };
+    var actual = distToSegment(p0, p1, p);
+    var expected: f32 = 7.81025;
+    try testing.expectEqual(expected, actual);
+    p = Point{ .x = 20, .y = 30 };
+    actual = distToSegment(p0, p1, p);
+    expected = 4.8507123;
+    try testing.expectEqual(expected, actual);
+    p = Point{ .x = 35, .y = 60 };
+    actual = distToSegment(p0, p1, p);
+    expected = 11.18034;
+    try testing.expectEqual(expected, actual);
 }
 
 pub fn makeImageRGB(

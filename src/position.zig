@@ -1,6 +1,6 @@
 const Point = @import("geometry.zig").Point;
 
-const PositionType = enum{
+const PositionType = enum {
     Inside,
     Intersects,
     Outside,
@@ -9,6 +9,5 @@ const PositionType = enum{
 pub const Position = union(PositionType) {
     Inside: bool,
     Intersecting: [2]Point,
-    Outside: f32,
+    Outside: u16,
 };
-

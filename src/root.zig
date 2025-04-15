@@ -44,8 +44,13 @@ pub fn run() void {
         y = 0;
         while (y < flow_domain_height + shortest_edge) : (y += longest_edge) {
             const point = Point{ .x = x, .y = y };
-            if (!body.isInBody(point)) {
-                points.put(point, .{null} ** 2) catch unreachable;
+            const position = body.getPosition(point);
+            switch (position) {
+                .Inside => continue,
+                .Intersecs => continue,
+                .Outside => {
+                    points.put(point, .{null} ** 2) catch unreachable;
+                },
             }
         }
     }

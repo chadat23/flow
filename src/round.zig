@@ -42,6 +42,28 @@ pub const Circle = struct {
         return utils.distPoints(self.points[0], self.points[point_count / 2]);
     }
 
+    pub fn getPosition(self: *const Circle, point: Point) Position {
+        var min_dist: u16 = std.math.maxInt(u16);
+        var circle_iterator = self.iterator();
+        const first_point = circle_iterator.nextPoint().?;
+        var last_point = first_point;
+        var crosses: u8 = 0;
+        while (circle_iterator.nextPoint()) |this_point| {
+            if (isAdjacent(last_point, this_point, point)) {
+                crosses += 1;
+            }
+            const dist = utils.distToSegment(last_point, this_point, point);
+            if (dist < min_dist) {
+                min_dist = dist;
+            }
+            last_point = this_point;
+        }
+        if (isAdjacent(last_point, first_point, point)) {
+            crosses += 1;
+        }
+        return if (crosses & 1 == 1) Position{ .Inside = true } else Position{ .Outside = min_dist };
+    }
+
     pub fn isInBody(self: *const Circle, point: Point) bool {
         var circle_iterator = self.iterator();
         const first_point = circle_iterator.nextPoint().?;
