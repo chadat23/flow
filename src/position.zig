@@ -2,7 +2,7 @@ const Point = @import("geometry.zig").Point;
 
 const PositionType = enum {
     Inside,
-    Intersects,
+    Intersecting,
     Outside,
 };
 

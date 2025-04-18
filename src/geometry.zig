@@ -3,9 +3,9 @@ pub const Point = struct {
     x: u16,
     y: u16,
 
-    //pub fn equals(self: *const Point, other: Point, tolerance: f32) bool {
-    //    return (approxEqAbs(f32, self.x, other.x, tolerance) and
-    //        approxEqAbs(f32, self.y, other.y, tolerance));
+    //pub fn equals(self: *const Point, other: Point, tolerance: f64) bool {
+    //    return (approxEqAbs(f64, self.x, other.x, tolerance) and
+    //        approxEqAbs(f64, self.y, other.y, tolerance));
     //}
 };
 

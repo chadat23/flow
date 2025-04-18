@@ -13,23 +13,23 @@ const Circle = @import("round.zig").Circle;
 const makeImageRGB = @import("utils.zig").makeImageRGB;
 const ppm = @import("ppm.zig");
 const fs = @import("fs.zig");
+const mesh = @import("mesh.zig");
 
 //pub fn run(file_path: []u8) void {
 pub fn run() void {
     const allocator = std.testing.allocator;
 
-    const flow_domain_length: u16 = 3000;
-    const flow_domain_height: u16 = 3000;
+    const flow_domain_length: u16 = 30_000;
+    const flow_domain_height: u16 = 30_000;
 
     // TODO: seems like there should be something to get the centroid to automatically place it
-    const body = Circle.create(Point{ .x = flow_domain_length / 2, .y = flow_domain_height / 2 }, 500);
+    const body = Circle.create(Point{ .x = flow_domain_length / 2, .y = flow_domain_height / 2 }, 5_000);
 
     const shortest_edge: u16 = body.shortestEdge();
     const characteristic_length = body.characteristicLength();
     const longest_edge_char_len_ratio = 6;
-    const char_len: u16 = @intFromFloat(@as(f32, @floatFromInt(characteristic_length)) * std.math.pi / 3); // make base element grid dims weird to avoid intersecting points
+    const char_len: u16 = @intFromFloat(@as(f64, @floatFromInt(characteristic_length)) * std.math.pi / 3); // make base element grid dims weird to avoid intersecting points
     const longest_edge: u16 = char_len / longest_edge_char_len_ratio;
-    std.debug.print("longest_edge: {d}\n", .{longest_edge});
 
     var points = std.AutoHashMap(Point, [2]?Edge).init(allocator);
     defer points.deinit();
@@ -43,15 +43,7 @@ pub fn run() void {
     while (x < flow_domain_length + shortest_edge) : (x += longest_edge) {
         y = 0;
         while (y < flow_domain_height + shortest_edge) : (y += longest_edge) {
-            const point = Point{ .x = x, .y = y };
-            const position = body.getPosition(point);
-            switch (position) {
-                .Inside => continue,
-                .Intersecs => continue,
-                .Outside => {
-                    points.put(point, .{null} ** 2) catch unreachable;
-                },
-            }
+            mesh.addBlock(&points, &body, x, y, longest_edge, shortest_edge, char_len);
         }
     }
     x -= longest_edge;
@@ -59,8 +51,6 @@ pub fn run() void {
     for (body.points) |point| {
         points.put(point, .{null} ** 2) catch unreachable;
     }
-
-    std.debug.print("point count: {d}\n", .{points.count()});
 
     const image_width = 1000;
     const image_height = 1000;

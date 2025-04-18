@@ -14,7 +14,6 @@ pub fn main() !void {
 
     const image_file: []const u8 = "./tests/image_x.bin";
     const x_file = fs.readInts(image_file, u8, capy.scratch_allocator);
-    std.debug.print("are belong to us {}.\n", .{x_file.items.len});
 
     const image_data = capy.ImageData.fromBytes(
         66,
