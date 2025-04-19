@@ -53,7 +53,7 @@ pub const Circle = struct {
             if (isAdjacentXY(last_point, this_point, x, y)) {
                 crosses += 1;
             }
-            const dist = utils.distToSegmentXY(last_point, this_point, x, y);
+            const dist = utils.distToSegmentXY(f64, last_point, this_point, x, y);
             if (dist < min_dist) {
                 min_dist = dist;
             }
