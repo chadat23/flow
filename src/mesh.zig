@@ -24,41 +24,38 @@ pub fn addBlock(
     };
 
     // TODO: refine this, sets the minimum size of the element grid
-    const max_allowable_divisions: u16 = longest_edge / shortest_edge;
-    var min_divisions: ?u16 = null;
-    var max_divisions: ?u16 = 0;
-    for (positions) |p| {
+    const max_allow_divs: u16 = longest_edge / shortest_edge;
+    var divisions: [4]?u16 = .{null} ** 4;
+    for (positions, 0..) |p, i| {
         switch (p) {
             .Inside => {
-                max_divisions = null;
+                divisions[i] = null;
             },
             .Outside => {
-                const divisions = char_len / p.Outside + 1;
-                if (min_divisions) |d| {
-                    if (divisions < d) {
-                        min_divisions = divisions;
-                    }
-                } else {
-                    min_divisions = divisions;
-                }
-                if (max_divisions) |d| {
-                    if (d < divisions) {
-                        if (divisions < max_allowable_divisions) {
-                            max_divisions = divisions;
-                        } else {
-                            max_divisions = max_allowable_divisions;
-                        }
-                    }
-                }
+                divisions[i] = char_len / p.Outside + 1;
             },
             else => unreachable,
         }
     }
-    if (min_divisions == null and max_divisions == null) {
-        return {};
+    var is_entirely_inside = true;
+    for (divisions) |division| {
+        if (division) |_| {
+            is_entirely_inside = false;
+        }
+    }
+    if (is_entirely_inside) return {};
+
+    var steps: u16 = std.math.maxInt(u16);
+    //var steps: u16 = 1;
+    for (divisions) |division| {
+        if (division) |d| {
+            if (d < steps) {
+                steps = if (d < max_allow_divs) d else max_allow_divs;
+            }
+        }
     }
 
-    const steps = if (max_divisions) |max| max else max_allowable_divisions;
+    // TODO: here's where the reference point for what sets the local mesh size is set
     const step_size: u16 = longest_edge / steps;
     for (0..steps) |i| {
         for (0..steps) |j| {
@@ -70,5 +67,4 @@ pub fn addBlock(
             }
         }
     }
-    //std.debug.print("done: {any}\n", .{8});
 }

@@ -8,7 +8,7 @@ const Point = @import("geometry.zig").Point;
 const utils = @import("utils.zig");
 const Position = @import("position.zig").Position;
 
-const point_count = 64;
+const point_count = 128;
 
 pub const Circle = struct {
     center: Point,
