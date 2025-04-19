@@ -2,9 +2,9 @@ const std = @import("std");
 const testing = std.testing;
 const math = std.math;
 const geometry = @import("geometry.zig");
-const Edge = geometry.Edge;
-
 const Point = @import("geometry.zig").Point;
+const Edge = geometry.Edge;
+const Location = geometry.Location;
 
 //pub fn distPoints(comptime T: type, a: Point, b: Point) u16 {
 pub fn distPoints(comptime outType: type, a: Point, b: Point) outType {
@@ -59,8 +59,8 @@ test "distXYXY" {
 }
 
 test "distPoints" {
-    const p0 = Point{ .x = 10, .y = 20 };
-    const p1 = Point{ .x = 40, .y = 60 };
+    const p0 = Point{ .x = 10, .y = 20, .location = Location.body };
+    const p1 = Point{ .x = 40, .y = 60, .location = Location.body };
     const actual = distPoints(f64, p0, p1);
     const expected = 50;
     try testing.expectEqual(expected, actual);
@@ -122,17 +122,17 @@ fn angleLawOfCos(comptime T: type, a: T, b: T, c: T) f64 {
 test "distToSeqment" {
     const tolerance = 0.000001;
     const approxEqAbs = std.math.approxEqAbs;
-    const p0 = Point{ .x = 20, .y = 10 };
-    const p1 = Point{ .x = 30, .y = 50 };
-    var p = Point{ .x = 15, .y = 4 };
+    const p0 = Point{ .x = 20, .y = 10, .location = Location.body };
+    const p1 = Point{ .x = 30, .y = 50, .location = Location.body };
+    var p = Point{ .x = 15, .y = 4, .location = Location.body };
     var actual = distToSegmentPoint(f64, p0, p1, p);
     var expected: f64 = 7.81025;
     try testing.expect(approxEqAbs(f64, expected, actual, tolerance));
-    p = Point{ .x = 20, .y = 30 };
+    p = Point{ .x = 20, .y = 30, .location = Location.body };
     actual = distToSegmentPoint(f64, p0, p1, p);
     expected = 4.8507123;
     try testing.expect(approxEqAbs(f64, expected, actual, tolerance));
-    p = Point{ .x = 35, .y = 60 };
+    p = Point{ .x = 35, .y = 60, .location = Location.body };
     actual = distToSegmentPoint(f64, p0, p1, p);
     expected = 11.18034;
     try testing.expect(approxEqAbs(f64, expected, actual, tolerance));
@@ -140,23 +140,59 @@ test "distToSeqment" {
 
 pub fn makeImageRGB(
     points: std.AutoHashMap(Point, [2]?Edge),
-    flow_domain_length: u16,
-    flow_domain_height: u16,
+    edges: std.AutoHashMap(Edge, [2]?usize),
+    domain_length: u16,
+    domain_height: u16,
     image_width: u32,
     image_height: u32,
 ) std.ArrayList(u32) {
     const allocator = std.testing.allocator;
     const samples: u16 = 3;
-    var image = std.ArrayList(u32).initCapacity(allocator, points.count()) catch unreachable;
+    const domain_length_image_width_ratio: f64 = @as(f64, @floatFromInt(domain_length)) / @as(f64, @floatFromInt(image_width));
+    const domain_height_image_height_ratio: f64 = @as(f64, @floatFromInt(domain_height)) / @as(f64, @floatFromInt(image_height));
+    var image = std.ArrayList(u32).initCapacity(allocator, image_width * image_height * 3) catch unreachable;
 
     for (0..(image_width + 1) * (image_height + 1) * samples) |_| {
         image.append(255) catch unreachable;
     }
 
+    var edges_iter = edges.iterator();
+    while (edges_iter.next()) |edge| {
+        const p0x: f64 = @floatFromInt(edge.key_ptr.*.p0.x);
+        const p0y: f64 = @floatFromInt(edge.key_ptr.*.p0.y);
+        const p1x: f64 = @floatFromInt(edge.key_ptr.*.p1.x);
+        const p1y: f64 = @floatFromInt(edge.key_ptr.*.p1.y);
+
+        const steps = @as(usize, @intFromFloat(edge.key_ptr.*.Length() / domain_length_image_width_ratio));
+        const steps_f: f64 = @floatFromInt(steps);
+        const dx = p1x - p0x;
+        const m = (p1y - p0y) / dx;
+        for (0..steps) |n| {
+            const x = p0x + @as(f64, @floatFromInt(n)) * dx / steps_f;
+            var y: f64 = undefined;
+            if (p0x == p1x) {
+                const dy = p1y - p0y;
+                y = p0y + @as(f64, @floatFromInt(n)) * dy / steps_f;
+            } else {
+                y = p0y + @as(f64, @floatFromInt(n)) * dx / steps_f * m;
+            }
+
+            const img_x: usize = @intFromFloat(x / domain_length_image_width_ratio);
+            const img_y: usize = @intFromFloat(y / domain_height_image_height_ratio);
+
+            const i: usize = (img_x + img_y * image_width) * 3;
+            if (i < image.items.len) {
+                image.items[i] = 255;
+                image.items[i + 1] = 0;
+                image.items[i + 2] = 0;
+            }
+        }
+    }
+
     var points_iter = points.iterator();
     while (points_iter.next()) |point| {
-        const x = point.key_ptr.*.x * image_width / flow_domain_length;
-        const y = point.key_ptr.*.y * image_height / flow_domain_height;
+        const x = point.key_ptr.*.x * image_width / domain_length;
+        const y = point.key_ptr.*.y * image_height / domain_height;
         const i = (x + y * image_width) * 3;
         if (i < image.items.len) {
             image.items[i] = 0;
