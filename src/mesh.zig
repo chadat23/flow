@@ -51,11 +51,62 @@ pub fn addEdges(
                 edges.put(Edge{ .p0 = point, .p1 = closest_point }, .{null} ** 2) catch unreachable;
                 edges.put(Edge{ .p0 = point, .p1 = second_closest_point }, .{null} ** 2) catch unreachable;
             },
-            .perimeter => {},
+            .perimeter => {
+                _ = unused_points.remove(point);
+                var closest: f64 = @floatFromInt(std.math.maxInt(u16) - 1);
+                var closest_point = point;
+                var second_closest: f64 = @floatFromInt(std.math.maxInt(u16));
+                var second_closest_point = point;
+                var third_closest: f64 = @floatFromInt(std.math.maxInt(u16));
+                var third_closest_point = point;
+
+                var upoint_iter = unused_points.iterator();
+                while (upoint_iter.next()) |up| {
+                    const test_point = up.key_ptr.*;
+                    const dist = utils.distPoints(f64, point, test_point);
+                    if (dist < closest) {
+                        third_closest = second_closest;
+                        third_closest_point = second_closest_point;
+                        second_closest = closest;
+                        second_closest_point = closest_point;
+                        closest = dist;
+                        closest_point = test_point;
+                    } else if (dist < second_closest) {
+                        third_closest = second_closest;
+                        third_closest_point = second_closest_point;
+                        second_closest = dist;
+                        second_closest_point = test_point;
+                    } else if (dist < third_closest) {
+                        third_closest = dist;
+                        third_closest_point = test_point;
+                    }
+                }
+
+                const new_edges: [3]Edge = .{
+                    Edge{ .p0 = point, .p1 = closest_point },
+                    Edge{ .p0 = point, .p1 = second_closest_point },
+                    Edge{ .p0 = point, .p1 = third_closest_point },
+                };
+
+                for (new_edges) |edge| {
+                    if (!edgeIsPresent(edges, edge)) {
+                        edges.put(edge, .{null} ** 2) catch unreachable;
+                    }
+                }
+            },
             .bulk => {},
             .body => {},
         }
     }
+}
+
+fn edgeIsPresent(edges: *std.AutoHashMap(Edge, [2]?usize), edge: Edge) bool {
+    if (edges.contains(edge)) {
+        return true;
+    } else if (edges.contains(Edge{ .p0 = edge.p1, .p1 = edge.p0 })) {
+        return true;
+    }
+    return false;
 }
 
 pub fn addPoints(
@@ -99,7 +150,6 @@ pub fn addPoints(
     if (is_entirely_inside) return {};
 
     var steps: u16 = std.math.maxInt(u16);
-    //var steps: u16 = 1;
     for (divisions) |division| {
         if (division) |d| {
             if (d < steps) {

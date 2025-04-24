@@ -63,6 +63,27 @@ pub fn run() void {
     }
     x -= longest_edge;
     y -= longest_edge;
+    var x_: u16 = 0;
+    while (x_ < flow_domain_length + shortest_edge) : (x_ += longest_edge) {
+        points.put(Point{
+            .x = x_,
+            .y = y - 1,
+            .location = .perimeter,
+        }, .{null} ** 2) catch unreachable;
+    }
+    var y_: u16 = 0;
+    while (y_ < flow_domain_height + shortest_edge) : (y_ += longest_edge) {
+        points.put(Point{
+            .x = x - 1,
+            .y = y_,
+            .location = .perimeter,
+        }, .{null} ** 2) catch unreachable;
+    }
+    points.put(Point{
+        .x = x - 1,
+        .y = y - 1,
+        .location = .perimeter,
+    }, .{null} ** 2) catch unreachable;
 
     mesh.addEdges(&points, &edges, allocator);
 
@@ -77,6 +98,7 @@ pub fn run() void {
 }
 
 test "run" {
+    //std.debug.print("x: {}, y: {}\n", .{ x, y });
     //    try testing.expect(add(3, 7) == 10);
     run();
 }

@@ -156,6 +156,7 @@ pub fn makeImageRGB(
         image.append(255) catch unreachable;
     }
 
+    //_ = edges;
     var edges_iter = edges.iterator();
     while (edges_iter.next()) |edge| {
         const p0x: f64 = @floatFromInt(edge.key_ptr.*.p0.x);
@@ -189,8 +190,10 @@ pub fn makeImageRGB(
         }
     }
 
+    std.debug.print("####: {}\n", .{points.count()});
     var points_iter = points.iterator();
     while (points_iter.next()) |point| {
+        //if (point.key_ptr.*.location == .corner) {
         const x = point.key_ptr.*.x * image_width / domain_length;
         const y = point.key_ptr.*.y * image_height / domain_height;
         const i = (x + y * image_width) * 3;
@@ -199,6 +202,7 @@ pub fn makeImageRGB(
             image.items[i + 1] = 0;
             image.items[i + 2] = 0;
         }
+        //}
     }
 
     return image;
