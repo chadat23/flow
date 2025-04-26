@@ -3,13 +3,71 @@ const Circle = @import("round.zig").Circle;
 const geometry = @import("geometry.zig");
 const Edge = geometry.Edge;
 const Point = geometry.Point;
+const PointInfo = geometry.PointInfo;
 const Location = geometry.Location;
 const utils = @import("utils.zig");
 const position = @import("position.zig");
 const Position = position.Position;
 
+pub fn addPoints(
+    body: *const Circle,
+    points: *std.AutoHashMap(Point, PointInfo),
+    char_len: u16,
+    flow_domain_length: u16,
+    flow_domain_height: u16,
+    longest_edge: u16,
+    shortest_edge: u16,
+) void {
+    const max_allow_divs: u16 = longest_edge / shortest_edge;
+    var x: u16 = 0;
+    var y: u16 = 0;
+    while (x < flow_domain_length) : (x += longest_edge) {
+        y = 0;
+        while (y < flow_domain_height) : (y += longest_edge) {
+            addElementPoints(
+                points,
+                body,
+                x,
+                y,
+                longest_edge,
+                max_allow_divs,
+                char_len,
+                flow_domain_length,
+                flow_domain_height,
+            );
+        }
+    }
+    var this_x: u16 = 0;
+    while (this_x < flow_domain_length) : (this_x += longest_edge) {
+        points.put(
+            Point{
+                .x = this_x,
+                .y = y - 1,
+            },
+            PointInfo{ .location = .perimeter },
+        ) catch unreachable;
+    }
+    var this_y: u16 = 0;
+    while (this_y < flow_domain_height) : (this_y += longest_edge) {
+        points.put(
+            Point{
+                .x = x - 1,
+                .y = this_y,
+            },
+            PointInfo{ .location = .perimeter },
+        ) catch unreachable;
+    }
+    points.put(
+        Point{
+            .x = x - 1,
+            .y = y - 1,
+        },
+        PointInfo{ .location = .corner },
+    ) catch unreachable;
+}
+
 pub fn addEdges(
-    points: *std.AutoHashMap(Point, [2]?Edge),
+    points: *std.AutoHashMap(Point, PointInfo),
     edges: *std.AutoHashMap(Edge, [2]?usize),
     allocator: std.mem.Allocator,
 ) void {
@@ -22,7 +80,8 @@ pub fn addEdges(
     point_iter = points.iterator();
     while (point_iter.next()) |p| {
         const point = p.key_ptr.*;
-        switch (point.location) {
+        const point_info = p.value_ptr.*;
+        switch (point_info.location) {
             .corner => {
                 _ = unused_points.remove(point);
                 var closest: f64 = @floatFromInt(std.math.maxInt(u16) - 1);
@@ -46,10 +105,10 @@ pub fn addEdges(
                 }
                 //std.debug.print("### dists closest: {}, second_closest {}.\n", .{ closest, second_closest });
 
-                p.value_ptr.*[0] = Edge{ .p0 = point, .p1 = closest_point };
-                p.value_ptr.*[1] = Edge{ .p0 = point, .p1 = second_closest_point };
-                edges.put(Edge{ .p0 = point, .p1 = closest_point }, .{null} ** 2) catch unreachable;
-                edges.put(Edge{ .p0 = point, .p1 = second_closest_point }, .{null} ** 2) catch unreachable;
+                //p.value_ptr.*[0] = Edge.create(point, closest_point);
+                //p.value_ptr.*[1] = Edge.create(point, second_closest_point);
+                edges.put(Edge.create(point, closest_point), .{null} ** 2) catch unreachable;
+                edges.put(Edge.create(point, second_closest_point), .{null} ** 2) catch unreachable;
             },
             .perimeter => {
                 _ = unused_points.remove(point);
@@ -83,13 +142,13 @@ pub fn addEdges(
                 }
 
                 const new_edges: [3]Edge = .{
-                    Edge{ .p0 = point, .p1 = closest_point },
-                    Edge{ .p0 = point, .p1 = second_closest_point },
-                    Edge{ .p0 = point, .p1 = third_closest_point },
+                    Edge.create(point, closest_point),
+                    Edge.create(point, second_closest_point),
+                    Edge.create(point, third_closest_point),
                 };
 
                 for (new_edges) |edge| {
-                    if (!edgeIsPresent(edges, edge)) {
+                    if (!edges.contains(edge)) {
                         edges.put(edge, .{null} ** 2) catch unreachable;
                     }
                 }
@@ -100,22 +159,22 @@ pub fn addEdges(
     }
 }
 
-fn edgeIsPresent(edges: *std.AutoHashMap(Edge, [2]?usize), edge: Edge) bool {
-    if (edges.contains(edge)) {
-        return true;
-    } else if (edges.contains(Edge{ .p0 = edge.p1, .p1 = edge.p0 })) {
-        return true;
-    }
-    return false;
-}
+//fn edgeIsPresent(edges: *std.AutoHashMap(Edge, [2]?usize), edge: Edge) bool {
+//    if (edges.contains(edge)) {
+//        return true;
+//    } else if (edges.contains(Edge{ .p0 = edge.p1, .p1 = edge.p0 })) {
+//        return true;
+//    }
+//    return false;
+//}
 
-pub fn addPoints(
-    points: *std.AutoHashMap(Point, [2]?Edge),
+pub fn addElementPoints(
+    points: *std.AutoHashMap(Point, PointInfo),
     body: *const Circle,
     x: u16,
     y: u16,
     longest_edge: u16,
-    shortest_edge: u16,
+    max_allow_divs: u16,
     char_len: u16,
     domain_width: u16,
     domain_height: u16,
@@ -128,7 +187,6 @@ pub fn addPoints(
     };
 
     // TODO: refine this, sets the minimum size of the element grid
-    const max_allow_divs: u16 = longest_edge / shortest_edge;
     var divisions: [4]?u16 = .{null} ** 4;
     for (positions, 0..) |p, i| {
         switch (p) {
@@ -157,6 +215,7 @@ pub fn addPoints(
             }
         }
     }
+    //std.debug.print("### steps: {}, max_allow_divs: {}\n", .{ steps, max_allow_divs });
 
     // TODO: here's where the reference point for what sets the local mesh size is set
     const step_size: u16 = longest_edge / steps;
@@ -169,20 +228,26 @@ pub fn addPoints(
                 @intCast(this_y),
             );
             if (this_position == .Outside) {
-                const location: Location = if (this_x == 0 or this_x > domain_width)
-                    if (this_y == 0 or this_y > domain_height)
+                //const location: Location = if (this_x == 0 or this_x > domain_width)
+                const location: Location = if (this_x == 0 or this_x == domain_width)
+                    //if (this_y == 0 or this_y > domain_height)
+                    if (this_y == 0 or this_y == domain_height)
                         Location.corner
                     else
                         Location.perimeter
-                else if (this_y == 0 or this_y > domain_height)
+                    //else if (this_y == 0 or this_y > domain_height)
+                else if (this_y == 0 or this_y == domain_height)
                     Location.perimeter
                 else
                     Location.bulk;
-                points.put(Point{
-                    .x = @intCast(this_x),
-                    .y = @intCast(this_y),
-                    .location = location,
-                }, .{null} ** 2) catch unreachable;
+
+                points.put(
+                    Point{
+                        .x = @intCast(this_x),
+                        .y = @intCast(this_y),
+                    },
+                    PointInfo{ .location = location },
+                ) catch unreachable;
             }
         }
     }

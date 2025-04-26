@@ -3,6 +3,7 @@ const testing = std.testing;
 const math = std.math;
 const geometry = @import("geometry.zig");
 const Point = @import("geometry.zig").Point;
+const PointInfo = @import("geometry.zig").PointInfo;
 const Edge = geometry.Edge;
 const Location = geometry.Location;
 
@@ -59,8 +60,8 @@ test "distXYXY" {
 }
 
 test "distPoints" {
-    const p0 = Point{ .x = 10, .y = 20, .location = Location.body };
-    const p1 = Point{ .x = 40, .y = 60, .location = Location.body };
+    const p0 = Point{ .x = 10, .y = 20 };
+    const p1 = Point{ .x = 40, .y = 60 };
     const actual = distPoints(f64, p0, p1);
     const expected = 50;
     try testing.expectEqual(expected, actual);
@@ -122,24 +123,24 @@ fn angleLawOfCos(comptime T: type, a: T, b: T, c: T) f64 {
 test "distToSeqment" {
     const tolerance = 0.000001;
     const approxEqAbs = std.math.approxEqAbs;
-    const p0 = Point{ .x = 20, .y = 10, .location = Location.body };
-    const p1 = Point{ .x = 30, .y = 50, .location = Location.body };
-    var p = Point{ .x = 15, .y = 4, .location = Location.body };
+    const p0 = Point{ .x = 20, .y = 10 };
+    const p1 = Point{ .x = 30, .y = 50 };
+    var p = Point{ .x = 15, .y = 4 };
     var actual = distToSegmentPoint(f64, p0, p1, p);
     var expected: f64 = 7.81025;
     try testing.expect(approxEqAbs(f64, expected, actual, tolerance));
-    p = Point{ .x = 20, .y = 30, .location = Location.body };
+    p = Point{ .x = 20, .y = 30 };
     actual = distToSegmentPoint(f64, p0, p1, p);
     expected = 4.8507123;
     try testing.expect(approxEqAbs(f64, expected, actual, tolerance));
-    p = Point{ .x = 35, .y = 60, .location = Location.body };
+    p = Point{ .x = 35, .y = 60 };
     actual = distToSegmentPoint(f64, p0, p1, p);
     expected = 11.18034;
     try testing.expect(approxEqAbs(f64, expected, actual, tolerance));
 }
 
 pub fn makeImageRGB(
-    points: std.AutoHashMap(Point, [2]?Edge),
+    points: std.AutoHashMap(Point, PointInfo),
     edges: std.AutoHashMap(Edge, [2]?usize),
     domain_length: u16,
     domain_height: u16,
@@ -190,10 +191,8 @@ pub fn makeImageRGB(
         }
     }
 
-    std.debug.print("####: {}\n", .{points.count()});
     var points_iter = points.iterator();
     while (points_iter.next()) |point| {
-        //if (point.key_ptr.*.location == .corner) {
         const x = point.key_ptr.*.x * image_width / domain_length;
         const y = point.key_ptr.*.y * image_height / domain_height;
         const i = (x + y * image_width) * 3;

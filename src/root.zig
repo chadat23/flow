@@ -6,6 +6,7 @@ const testing = std.testing;
 
 const geometry = @import("geometry.zig");
 const Point = geometry.Point;
+const PointInfo = geometry.PointInfo;
 const Edge = geometry.Edge;
 const Element2D = geometry.Element2D;
 const Location = geometry.Location;
@@ -27,69 +28,44 @@ pub fn run() void {
     const body = Circle.create(Point{
         .x = flow_domain_length / 2,
         .y = flow_domain_height / 2,
-        .location = .body,
     }, 5_000);
 
     const shortest_edge: u16 = body.shortestEdge();
     const characteristic_length = body.characteristicLength();
-    const longest_edge_char_len_ratio = 6;
-    const char_len: u16 = @intFromFloat(@as(f64, @floatFromInt(characteristic_length)) * std.math.pi / 3); // make base element grid dims weird to avoid intersecting points
+    //const longest_edge_char_len_ratio = 6;
+    const longest_edge_char_len_ratio = 4;
+    // make base element grid dims weird to avoid intersecting points
+    const char_len: u16 = @intFromFloat(@as(f64, @floatFromInt(characteristic_length)) * std.math.pi / 3);
     const longest_edge: u16 = char_len / longest_edge_char_len_ratio;
+    std.debug.print("longest_edge: {}\n", .{longest_edge});
 
-    var points = std.AutoHashMap(Point, [2]?Edge).init(allocator);
+    //var points = std.AutoHashMap(Point, [2]?Edge).init(allocator);
+    var points = std.AutoHashMap(Point, PointInfo).init(allocator);
     defer points.deinit();
     var edges = std.AutoHashMap(Edge, [2]?usize).init(allocator);
     defer edges.deinit();
     var elements = std.ArrayList(Element2D).init(allocator);
     defer elements.deinit();
 
-    var x: u16 = 0;
-    var y: u16 = 0;
-    while (x < flow_domain_length + shortest_edge) : (x += longest_edge) {
-        y = 0;
-        while (y < flow_domain_height + shortest_edge) : (y += longest_edge) {
-            mesh.addPoints(
-                &points,
-                &body,
-                x,
-                y,
-                longest_edge,
-                shortest_edge,
-                char_len,
-                flow_domain_length,
-                flow_domain_height,
-            );
-        }
-    }
-    x -= longest_edge;
-    y -= longest_edge;
-    var x_: u16 = 0;
-    while (x_ < flow_domain_length + shortest_edge) : (x_ += longest_edge) {
-        points.put(Point{
-            .x = x_,
-            .y = y - 1,
-            .location = .perimeter,
-        }, .{null} ** 2) catch unreachable;
-    }
-    var y_: u16 = 0;
-    while (y_ < flow_domain_height + shortest_edge) : (y_ += longest_edge) {
-        points.put(Point{
-            .x = x - 1,
-            .y = y_,
-            .location = .perimeter,
-        }, .{null} ** 2) catch unreachable;
-    }
-    points.put(Point{
-        .x = x - 1,
-        .y = y - 1,
-        .location = .perimeter,
-    }, .{null} ** 2) catch unreachable;
+    //const fdomain_length = (flow_domain_length + longest_edge - 1) / longest_edge * longest_edge;
+    //const domain_height = (flow_domain_height + longest_edge - 1) / longest_edge * longest_edge;
+    const domain_length = (flow_domain_length) / longest_edge * longest_edge;
+    const domain_height = (flow_domain_height) / longest_edge * longest_edge;
+    mesh.addPoints(
+        &body,
+        &points,
+        char_len,
+        domain_length,
+        domain_height,
+        longest_edge,
+        shortest_edge,
+    );
 
     mesh.addEdges(&points, &edges, allocator);
 
     const image_width = 1000;
     const image_height = 1000;
-    const image = makeImageRGB(points, edges, x, y, image_width, image_height);
+    const image = makeImageRGB(points, edges, domain_length, domain_height, image_width, image_height);
     defer image.deinit();
     const ppm_image = ppm.encode(&image, image_width, image_height, 255);
     defer ppm_image.deinit();

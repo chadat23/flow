@@ -10,6 +10,7 @@ const Location = geometry.Location;
 const utils = @import("utils.zig");
 const Position = @import("position.zig").Position;
 
+//const point_count = 36;
 const point_count = 128;
 
 pub const Circle = struct {
@@ -28,7 +29,6 @@ pub const Circle = struct {
             points[i] = Point{
                 .x = @as(u16, @intCast(x + @as(i32, @intFromFloat(r_float * @cos(rads))))),
                 .y = @as(u16, @intCast(y + @as(i32, @intFromFloat(r_float * @sin(rads))))),
-                .location = Location.body,
             };
         }
         return .{
