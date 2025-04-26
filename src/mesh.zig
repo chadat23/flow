@@ -64,6 +64,16 @@ pub fn addPoints(
         },
         PointInfo{ .location = .corner },
     ) catch unreachable;
+    var bi = body.iterator();
+    while (bi.nextPoint()) |point| {
+        points.put(
+            Point{
+                .x = point.x,
+                .y = point.y,
+            },
+            PointInfo{ .location = .body },
+        ) catch unreachable;
+    }
 }
 
 pub fn addEdges(

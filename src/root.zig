@@ -12,7 +12,7 @@ const Element2D = geometry.Element2D;
 const Location = geometry.Location;
 
 const Circle = @import("round.zig").Circle;
-const makeImageRGB = @import("utils.zig").makeImageRGB;
+const makeImageRGB = @import("image.zig").makeImageRGB;
 const ppm = @import("ppm.zig");
 const fs = @import("fs.zig");
 const mesh = @import("mesh.zig");
@@ -61,7 +61,7 @@ pub fn run() void {
         shortest_edge,
     );
 
-    mesh.addEdges(&points, &edges, allocator);
+    //mesh.addEdges(&points, &edges, allocator);
 
     const image_width = 1000;
     const image_height = 1000;
