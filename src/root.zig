@@ -32,23 +32,20 @@ pub fn run() void {
 
     const shortest_edge: u16 = body.shortestEdge();
     const characteristic_length = body.characteristicLength();
-    //const longest_edge_char_len_ratio = 6;
     const longest_edge_char_len_ratio = 4;
     // make base element grid dims weird to avoid intersecting points
     const char_len: u16 = @intFromFloat(@as(f64, @floatFromInt(characteristic_length)) * std.math.pi / 3);
     const longest_edge: u16 = char_len / longest_edge_char_len_ratio;
-    std.debug.print("longest_edge: {}\n", .{longest_edge});
+    //std.debug.print("longest_edge: {}\n", .{longest_edge});
 
     //var points = std.AutoHashMap(Point, [2]?Edge).init(allocator);
     var points = std.AutoHashMap(Point, PointInfo).init(allocator);
     defer points.deinit();
-    var edges = std.AutoHashMap(Edge, [2]?usize).init(allocator);
+    var edges = std.AutoHashMap(Edge, [5]?usize).init(allocator);
     defer edges.deinit();
     var elements = std.ArrayList(Element2D).init(allocator);
     defer elements.deinit();
 
-    //const fdomain_length = (flow_domain_length + longest_edge - 1) / longest_edge * longest_edge;
-    //const domain_height = (flow_domain_height + longest_edge - 1) / longest_edge * longest_edge;
     const domain_length = (flow_domain_length) / longest_edge * longest_edge;
     const domain_height = (flow_domain_height) / longest_edge * longest_edge;
     mesh.addPoints(
@@ -61,7 +58,7 @@ pub fn run() void {
         shortest_edge,
     );
 
-    //mesh.addEdges(&points, &edges, allocator);
+    mesh.addEdges(&points, &edges, allocator);
 
     const image_width = 1000;
     const image_height = 1000;

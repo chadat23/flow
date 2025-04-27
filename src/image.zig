@@ -25,7 +25,7 @@ const orange = Color.create(255, 0, 255);
 
 pub fn makeImageRGB(
     points: std.AutoHashMap(Point, PointInfo),
-    edges: std.AutoHashMap(Edge, [2]?usize),
+    edges: std.AutoHashMap(Edge, [5]?usize),
     domain_length: u16,
     domain_height: u16,
     image_width: u32,
@@ -82,35 +82,102 @@ pub fn makeImageRGB(
     const bulk_point_color = blue;
     const body_point_color = purple;
     var points_iter = points.iterator();
-    while (points_iter.next()) |point| {
-        const p = point.key_ptr;
-        const point_info = point.value_ptr;
-        const x = p.x * image_width / domain_length;
-        const y = p.y * image_height / domain_height;
-        const i = (x + y * image_width) * 3;
+    while (points_iter.next()) |point_w_info| {
+        const point = point_w_info.key_ptr;
+        const point_info = point_w_info.value_ptr;
+        const x = point.x * image_width / domain_length;
+        const y = point.y * image_height / domain_height;
         switch (point_info.location) {
             .corner => {
-                image.items[i] = corner_point_color.r;
-                image.items[i + 1] = corner_point_color.g;
-                image.items[i + 2] = corner_point_color.b;
+                addPointToImage(&image, x, y, corner_point_color, image_width, image_height);
             },
             .perimeter => {
-                image.items[i] = perimeter_point_color.r;
-                image.items[i + 1] = perimeter_point_color.g;
-                image.items[i + 2] = perimeter_point_color.b;
+                addPointToImage(&image, x, y, perimeter_point_color, image_width, image_height);
             },
             .bulk => {
-                image.items[i] = bulk_point_color.r;
-                image.items[i + 1] = bulk_point_color.g;
-                image.items[i + 2] = bulk_point_color.b;
+                addPointToImage(&image, x, y, bulk_point_color, image_width, image_height);
             },
             .body => {
-                image.items[i] = body_point_color.r;
-                image.items[i + 1] = body_point_color.g;
-                image.items[i + 2] = body_point_color.b;
+                addPointToImage(&image, x, y, body_point_color, image_width, image_height);
             },
         }
     }
 
     return image;
+}
+
+fn addPointToImage(
+    image: *std.ArrayList(u32),
+    x: u32,
+    y: u32,
+    color: Color,
+    width: u32,
+    height: u32,
+) void {
+    const i = (x + y * width) * 3;
+    image.items[i] = color.r;
+    image.items[i + 1] = color.g;
+    image.items[i + 2] = color.b;
+
+    setColor(image, i, color);
+    if (y == 0) {
+        setColor(image, i + width * 3, color);
+        if (x == 0) {
+            setColor(image, i + 3, color);
+            setColor(image, i + width * 3 + 3, color);
+        } else if (x == width - 1) {
+            setColor(image, i - 3, color);
+            setColor(image, i + width * 3 - 3, color);
+        } else {
+            setColor(image, i + 3, color);
+            setColor(image, i + width * 3 + 3, color);
+            setColor(image, i - 3, color);
+            setColor(image, i + width * 3 - 3, color);
+        }
+    } else if (y == height - 1) {
+        setColor(image, i - width * 3, color);
+        if (x == 0) {
+            setColor(image, i + 3, color);
+            setColor(image, i - width * 3 + 3, color);
+        } else if (x == width - 1) {
+            setColor(image, i - 3, color);
+            setColor(image, i - width * 3 - 3, color);
+        } else {
+            setColor(image, i + 3, color);
+            setColor(image, i - width * 3 + 3, color);
+            setColor(image, i - 3, color);
+            setColor(image, i - width * 3 - 3, color);
+        }
+    } else if (x == 0) {
+        setColor(image, i - width * 3, color);
+        setColor(image, i - width * 3 + 3, color);
+        setColor(image, i + 3, color);
+        setColor(image, i + width * 3, color);
+        setColor(image, i + width * 3 + 3, color);
+    } else if (x == width - 1) {
+        setColor(image, i - width * 3, color);
+        setColor(image, i - width * 3 - 3, color);
+        setColor(image, i - 3, color);
+        setColor(image, i + width * 3, color);
+        setColor(image, i + width * 3 - 3, color);
+    } else {
+        setColor(image, i - width * 3 - 3, color);
+        setColor(image, i - width * 3, color);
+        setColor(image, i - width * 3 + 3, color);
+        setColor(image, i - 3, color);
+        setColor(image, i + 3, color);
+        setColor(image, i + width * 3 - 3, color);
+        setColor(image, i + width * 3, color);
+        setColor(image, i + width * 3 + 3, color);
+    }
+}
+
+fn setColor(
+    image: *std.ArrayList(u32),
+    i: usize,
+    color: Color,
+) void {
+    image.items[i] = color.r;
+    image.items[i + 1] = color.g;
+    image.items[i + 2] = color.b;
 }

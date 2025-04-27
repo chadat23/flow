@@ -1,4 +1,5 @@
-const approxEqAbs = @import("std").math.aproxEqAbs;
+const std = @import("std");
+const approxEqAbs = std.math.aproxEqAbs;
 const utils = @import("utils.zig");
 
 pub const Point = struct {
@@ -30,6 +31,7 @@ pub const Edge = struct {
         } else if (p1.y < p0.y) {
             return Edge{ .p0 = p1, .p1 = p0 };
         }
+        //std.debug.print("###\n p0 {} \n p1 {}\n", .{ p0, p1 });
         unreachable;
     }
 
